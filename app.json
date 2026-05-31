@@ -17,7 +17,15 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_AUDIO",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_AUDIO_PLAYBACK"
+      ],
+      "package": "com.rupamsatyaki.auramusic"
     },
     "web": {
       "bundler": "metro",
@@ -26,6 +34,13 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow AuraMusic to access your music library.",
+          "savePhotosPermission": "Allow AuraMusic to save music files to your device."
+        }
+      ],
       [
         "expo-splash-screen",
         {
