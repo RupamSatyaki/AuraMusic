@@ -191,9 +191,9 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     width: '45%',
-    backgroundColor: 'transparent', // Removed background
+    backgroundColor: 'rgba(255, 255, 255, 0.03)', // Subtle grayish bg
     borderRadius: 16,
-    padding: 12, // Reduced padding
+    padding: 12,
     margin: '2.5%',
     alignItems: 'center',
     flexDirection: 'row',
