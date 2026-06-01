@@ -1,7 +1,7 @@
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Image, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/src/theme/colors';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { scanLocalMusic } from '@/src/services/localMedia';
 import { usePlayerStore } from '@/src/store/usePlayerStore';
 import { Shuffle, PlayCircle, RefreshCw, MessageSquare, Music as MusicIcon, ChevronRight } from 'lucide-react-native';
@@ -15,6 +15,7 @@ export default function LibraryScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState('For You');
+  const [categoryLoading, setCategoryLoading] = useState(false);
   const { queue, addToQueue, clearQueue, setCurrentTrack } = usePlayerStore();
 
   const loadMusic = useCallback(async () => {
@@ -35,6 +36,41 @@ export default function LibraryScreen() {
     setRefreshing(true);
     loadMusic();
   };
+
+  const handleCategoryPress = (category: string) => {
+    if (category === activeCategory) return;
+    
+    if (category === 'Songs') {
+      setCategoryLoading(true);
+      setActiveCategory(category);
+      // Small timeout to allow the tab switch to render first
+      setTimeout(() => {
+        setCategoryLoading(false);
+      }, 300);
+    } else {
+      setActiveCategory(category);
+    }
+  };
+
+  const sortedGroupedSongs = useMemo(() => {
+    if (queue.length === 0) return [];
+    
+    const sortedSongs = [...queue].sort((a, b) => a.title.localeCompare(b.title));
+    const grouped: any[] = [];
+    let lastDivider = '';
+
+    sortedSongs.forEach(song => {
+      const firstChar = song.title.charAt(0).toUpperCase();
+      const currentDivider = /[A-Z]/.test(firstChar) ? firstChar : '#';
+      
+      if (currentDivider !== lastDivider) {
+        grouped.push({ type: 'divider', label: currentDivider });
+        lastDivider = currentDivider;
+      }
+      grouped.push({ type: 'song', ...song });
+    });
+    return grouped;
+  }, [queue]);
 
   const renderActionCard = (title: string, Icon: any, onPress: () => void) => (
     <TouchableOpacity style={styles.actionCard} onPress={onPress}>
@@ -72,24 +108,18 @@ export default function LibraryScreen() {
   );
 
   const renderSongsList = () => {
-    const sortedSongs = [...queue].sort((a, b) => a.title.localeCompare(b.title));
-    const groupedSongs: any[] = [];
-    let lastDivider = '';
-
-    sortedSongs.forEach(song => {
-      const firstChar = song.title.charAt(0).toUpperCase();
-      const currentDivider = /[A-Z]/.test(firstChar) ? firstChar : '#';
-      
-      if (currentDivider !== lastDivider) {
-        groupedSongs.push({ type: 'divider', label: currentDivider });
-        lastDivider = currentDivider;
-      }
-      groupedSongs.push({ type: 'song', ...song });
-    });
+    if (categoryLoading) {
+      return (
+        <View style={styles.categoryLoadingContainer}>
+          <ActivityIndicator size="medium" color={Colors.primary} />
+          <Text style={styles.loadingText}>Loading songs...</Text>
+        </View>
+      );
+    }
 
     return (
       <View style={styles.songsListContainer}>
-        {groupedSongs.map((item, index) => {
+        {sortedGroupedSongs.map((item, index) => {
           if (item.type === 'divider') {
             return (
               <View key={`divider-${item.label}`} style={styles.dividerContainer}>
@@ -139,7 +169,7 @@ export default function LibraryScreen() {
         {CATEGORIES.map((category) => (
           <TouchableOpacity 
             key={category} 
-            onPress={() => setActiveCategory(category)}
+            onPress={() => handleCategoryPress(category)}
             style={[styles.categoryTab, activeCategory === category && styles.activeCategoryTab]}
           >
             <Text style={[styles.categoryText, activeCategory === category && styles.activeCategoryText]}>
@@ -330,6 +360,12 @@ const styles = StyleSheet.create({
   loadingText: {
     color: Colors.textMuted,
     marginTop: 10,
+  },
+  categoryLoadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 50,
   },
   songsListContainer: {
     paddingHorizontal: 0,
