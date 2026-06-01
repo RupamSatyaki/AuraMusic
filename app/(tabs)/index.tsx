@@ -6,12 +6,15 @@ import { scanLocalMusic } from '@/src/services/localMedia';
 import { usePlayerStore } from '@/src/store/usePlayerStore';
 import { Shuffle, PlayCircle, RefreshCw, MessageSquare, Music as MusicIcon, ChevronRight } from 'lucide-react-native';
 
+import { TrackItem } from '@/src/components/Track/TrackItem';
+
 const CATEGORIES = ['For You', 'Songs', 'Folders', 'Albums', 'Artists', 'Genres'];
 
 export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('For You');
   const { queue, addToQueue, clearQueue, setCurrentTrack } = usePlayerStore();
 
   const loadMusic = useCallback(async () => {
@@ -68,6 +71,45 @@ export default function LibraryScreen() {
     </TouchableOpacity>
   );
 
+  const renderSongsList = () => {
+    const sortedSongs = [...queue].sort((a, b) => a.title.localeCompare(b.title));
+    const groupedSongs: any[] = [];
+    let lastChar = '';
+
+    sortedSongs.forEach(song => {
+      const firstChar = song.title.charAt(0).toUpperCase();
+      if (firstChar !== lastChar) {
+        groupedSongs.push({ type: 'divider', label: firstChar });
+        lastChar = firstChar;
+      }
+      groupedSongs.push({ type: 'song', ...song });
+    });
+
+    return (
+      <View style={styles.songsListContainer}>
+        {groupedSongs.map((item, index) => {
+          if (item.type === 'divider') {
+            return (
+              <View key={`divider-${item.label}`} style={styles.dividerContainer}>
+                <Text style={styles.dividerText}>{item.label}</Text>
+                <View style={styles.dividerLine} />
+              </View>
+            );
+          }
+          return (
+            <TrackItem
+              key={item.id}
+              title={item.title}
+              artist={item.artist || 'Unknown Artist'}
+              thumbnail={item.thumbnail}
+              onPress={() => setCurrentTrack(item)}
+            />
+          );
+        })}
+      </View>
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -92,58 +134,67 @@ export default function LibraryScreen() {
         style={styles.categoryScroll}
         contentContainerStyle={styles.categoryContent}
       >
-        {CATEGORIES.map((category, index) => (
+        {CATEGORIES.map((category) => (
           <TouchableOpacity 
             key={category} 
-            style={[styles.categoryTab, index === 0 && styles.activeCategoryTab]}
+            onPress={() => setActiveCategory(category)}
+            style={[styles.categoryTab, activeCategory === category && styles.activeCategoryTab]}
           >
-            <Text style={[styles.categoryText, index === 0 && styles.activeCategoryText]}>
+            <Text style={[styles.categoryText, activeCategory === category && styles.activeCategoryText]}>
               {category}
             </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      {/* Quick Actions Grid */}
-      <View style={styles.actionsGrid}>
-        {renderActionCard('Shuffle', Shuffle, () => {})}
-        {renderActionCard('Play', PlayCircle, () => {})}
-        {renderActionCard('Scan', RefreshCw, onRefresh)}
-        {renderActionCard('Feedback', MessageSquare, () => {})}
-      </View>
+      {activeCategory === 'For You' ? (
+        <>
+          {/* Quick Actions Grid */}
+          <View style={styles.actionsGrid}>
+            {renderActionCard('Shuffle', Shuffle, () => {})}
+            {renderActionCard('Play', PlayCircle, () => {})}
+            {renderActionCard('Scan', RefreshCw, onRefresh)}
+            {renderActionCard('Feedback', MessageSquare, () => {})}
+          </View>
 
-      {/* Last Added Section */}
-      {renderSectionHeader('Last Added')}
-      <FlatList
-        horizontal
-        data={queue.slice(0, 5)}
-        renderItem={renderHorizontalTrack}
-        keyExtractor={(item) => item.id}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.horizontalListContent}
-      />
+          {/* Sections */}
+          {renderSectionHeader('Last Added')}
+          <FlatList
+            horizontal
+            data={queue.slice(0, 5)}
+            renderItem={renderHorizontalTrack}
+            keyExtractor={(item) => item.id}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalListContent}
+          />
 
-      {/* Recently Played Section */}
-      {renderSectionHeader('Recently Played')}
-      <FlatList
-        horizontal
-        data={queue.slice(5, 10)}
-        renderItem={renderHorizontalTrack}
-        keyExtractor={(item) => item.id}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.horizontalListContent}
-      />
+          {renderSectionHeader('Recently Played')}
+          <FlatList
+            horizontal
+            data={queue.slice(5, 10)}
+            renderItem={renderHorizontalTrack}
+            keyExtractor={(item) => item.id}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalListContent}
+          />
 
-      {/* Most Played Section */}
-      {renderSectionHeader('Most Played')}
-      <FlatList
-        horizontal
-        data={queue.slice(10, 15)}
-        renderItem={renderHorizontalTrack}
-        keyExtractor={(item) => item.id}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.horizontalListContent}
-      />
+          {renderSectionHeader('Most Played')}
+          <FlatList
+            horizontal
+            data={queue.slice(10, 15)}
+            renderItem={renderHorizontalTrack}
+            keyExtractor={(item) => item.id}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalListContent}
+          />
+        </>
+      ) : activeCategory === 'Songs' ? (
+        renderSongsList()
+      ) : (
+        <View style={styles.centerContainer}>
+          <Text style={styles.emptyText}>{activeCategory} content coming soon!</Text>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -277,6 +328,29 @@ const styles = StyleSheet.create({
   loadingText: {
     color: Colors.textMuted,
     marginTop: 10,
+  },
+  songsListContainer: {
+    paddingHorizontal: 0,
+    marginTop: 10,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.02)',
+  },
+  dividerText: {
+    color: Colors.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
+    width: 25,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    marginLeft: 10,
   },
 });
 
