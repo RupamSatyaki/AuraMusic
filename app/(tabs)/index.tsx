@@ -4,7 +4,7 @@ import { Colors } from '@/src/theme/colors';
 import { useEffect, useState, useCallback } from 'react';
 import { scanLocalMusic } from '@/src/services/localMedia';
 import { usePlayerStore } from '@/src/store/usePlayerStore';
-import { Shuffle, Play, RefreshCcw, MessageSquare, Music as MusicIcon, ChevronRight } from 'lucide-react-native';
+import { Shuffle, PlayCircle, RefreshCw, MessageSquare, Music as MusicIcon, ChevronRight } from 'lucide-react-native';
 
 const CATEGORIES = ['For You', 'Songs', 'Folders', 'Albums', 'Artists', 'Genres'];
 
@@ -33,10 +33,10 @@ export default function LibraryScreen() {
     loadMusic();
   };
 
-  const renderActionCard = (title: string, Icon: any, color: string, onPress: () => void) => (
+  const renderActionCard = (title: string, Icon: any, onPress: () => void) => (
     <TouchableOpacity style={styles.actionCard} onPress={onPress}>
-      <View style={[styles.iconWrapper, { backgroundColor: color + '20' }]}>
-        <Icon color={color} size={24} fill={title === 'Play' ? color : 'transparent'} />
+      <View style={styles.iconWrapper}>
+        <Icon color="#888888" size={24} />
       </View>
       <Text style={styles.actionTitle}>{title}</Text>
     </TouchableOpacity>
@@ -106,10 +106,10 @@ export default function LibraryScreen() {
 
       {/* Quick Actions Grid */}
       <View style={styles.actionsGrid}>
-        {renderActionCard('Shuffle', Shuffle, '#FF5722', () => {})}
-        {renderActionCard('Play', Play, Colors.primary, () => {})}
-        {renderActionCard('Scan', RefreshCcw, '#2196F3', onRefresh)}
-        {renderActionCard('Feedback', MessageSquare, '#9C27B0', () => {})}
+        {renderActionCard('Shuffle', Shuffle, () => {})}
+        {renderActionCard('Play', PlayCircle, () => {})}
+        {renderActionCard('Scan', RefreshCw, onRefresh)}
+        {renderActionCard('Feedback', MessageSquare, () => {})}
       </View>
 
       {/* Last Added Section */}
@@ -157,17 +157,17 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   categoryScroll: {
-    paddingVertical: 15,
+    paddingVertical: 10, // Reduced from 15
   },
   categoryContent: {
     paddingHorizontal: 16,
   },
   categoryTab: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 16, // Reduced from 20
+    paddingVertical: 6, // Reduced from 8
+    borderRadius: 15, // Adjusted for smaller height
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    marginRight: 10,
+    marginRight: 8,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
   },
@@ -177,7 +177,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     color: Colors.textMuted,
-    fontSize: 14,
+    fontSize: 13, // Reduced from 14
     fontWeight: '600',
   },
   activeCategoryText: {
@@ -191,33 +191,34 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     width: '45%',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: 'transparent', // Removed background
     borderRadius: 16,
-    padding: 16,
+    padding: 12, // Reduced padding
     margin: '2.5%',
     alignItems: 'center',
     flexDirection: 'row',
   },
   iconWrapper: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10,
+    backgroundColor: 'transparent', // Removed background
   },
   actionTitle: {
-    color: Colors.text,
-    fontSize: 15,
-    fontWeight: 'bold',
+    color: '#888888', // Gray text to match icons
+    fontSize: 14,
+    fontWeight: '600',
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginTop: 25,
-    marginBottom: 15,
+    marginTop: 20, // Reduced from 25
+    marginBottom: 12, // Reduced from 15
   },
   sectionTitle: {
     color: Colors.text,
