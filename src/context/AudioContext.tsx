@@ -6,6 +6,7 @@ interface AudioContextType {
   togglePlayback: () => Promise<void>;
   playNext: () => void;
   playPrevious: () => void;
+  seek: (positionMillis: number) => Promise<void>;
   position: number;
   duration: number;
 }
@@ -74,6 +75,12 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const seek = async (positionMillis: number) => {
+    if (soundRef.current) {
+      await soundRef.current.setPositionAsync(positionMillis);
+    }
+  };
+
   const playNext = () => {
     if (queue.length === 0) return;
     const currentIndex = queue.findIndex(t => t.id === currentTrack?.id);
@@ -97,7 +104,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <AudioContext.Provider value={{ togglePlayback, playNext, playPrevious, position, duration }}>
+    <AudioContext.Provider value={{ togglePlayback, playNext, playPrevious, seek, position, duration }}>
       {children}
     </AudioContext.Provider>
   );

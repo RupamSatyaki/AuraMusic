@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Image, StyleSheet, Dimensions } from 'react-native';
+import React, { useRef } from 'react';
+import { View, Image, StyleSheet, Dimensions, PanResponder, Animated } from 'react-native';
 import { Music } from 'lucide-react-native';
 import { Colors } from '../../theme/colors';
 
@@ -8,12 +8,56 @@ const ART_SIZE = width * 0.85;
 
 interface PlayerAlbumArtProps {
   uri?: string;
+  onSkipNext?: () => void;
+  onSkipPrev?: () => void;
 }
 
-export const PlayerAlbumArt = ({ uri }: PlayerAlbumArtProps) => {
+export const PlayerAlbumArt = ({ uri, onSkipNext, onSkipPrev }: PlayerAlbumArtProps) => {
+  const pan = useRef(new Animated.ValueXY()).current;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 20;
+      },
+      onPanResponderMove: Animated.event(
+        [null, { dx: pan.x }],
+        { useNativeDriver: false }
+      ),
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx > 100) {
+          // Swipe Right -> Previous
+          onSkipPrev?.();
+        } else if (gestureState.dx < -100) {
+          // Swipe Left -> Next
+          onSkipNext?.();
+        }
+        
+        Animated.spring(pan, {
+          toValue: { x: 0, y: 0 },
+          useNativeDriver: false,
+        }).start();
+      },
+    })
+  ).current;
+
+  const animatedStyle = {
+    transform: [
+      { translateX: pan.x },
+      { rotate: pan.x.interpolate({
+          inputRange: [-200, 0, 200],
+          outputRange: ['-10deg', '0deg', '10deg'],
+        })
+      }
+    ],
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.shadowWrapper}>
+      <Animated.View 
+        {...panResponder.panHandlers}
+        style={[styles.shadowWrapper, animatedStyle]}
+      >
         {uri ? (
           <Image source={{ uri }} style={styles.image} />
         ) : (
@@ -21,7 +65,7 @@ export const PlayerAlbumArt = ({ uri }: PlayerAlbumArtProps) => {
             <Music color={Colors.primary} size={ART_SIZE * 0.4} />
           </View>
         )}
-      </View>
+      </Animated.View>
     </View>
   );
 };

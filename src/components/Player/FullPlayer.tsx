@@ -34,7 +34,11 @@ export const FullPlayer = () => {
         />
         
         <View style={styles.content}>
-          <PlayerAlbumArt uri={currentTrack.thumbnail} />
+          <PlayerAlbumArt 
+            uri={currentTrack.thumbnail} 
+            onSkipNext={playNext}
+            onSkipPrev={playPrevious}
+          />
           <PlayerInfo 
             title={currentTrack.title} 
             artist={currentTrack.artist} 

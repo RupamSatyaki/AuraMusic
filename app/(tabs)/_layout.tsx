@@ -1,21 +1,30 @@
 import { Tabs } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { Home, Search, Library, User } from 'lucide-react-native';
-import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import Animated, { 
+  useAnimatedStyle, 
+  withSpring, 
+  withTiming,
+  useSharedValue,
+  interpolate
+} from 'react-native-reanimated';
 
 import { Colors } from '@/src/theme/colors';
 import { MiniPlayer } from '@/src/components/Player/MiniPlayer';
 import { FullPlayer } from '@/src/components/Player/FullPlayer';
 
 const AnimatedIcon = ({ children, focused }: { children: React.ReactNode; focused: boolean }) => {
+  const scale = useSharedValue(1);
+
   const animatedStyle = useAnimatedStyle(() => {
     return {
-      transform: [{ scale: focused ? withSpring(1.2) : withSpring(1) }],
+      transform: [{ scale: withSpring(focused ? 1.2 : 1, { damping: 12 }) }],
+      opacity: withTiming(focused ? 1 : 0.7),
     };
   });
 
   return (
-    <Animated.View style={animatedStyle}>
+    <Animated.View style={[styles.iconContainer, animatedStyle]}>
       {children}
     </Animated.View>
   );
@@ -29,14 +38,23 @@ export default function TabLayout() {
           headerShown: false,
           tabBarActiveTintColor: '#FFFFFF',
           tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
+          tabBarShowLabel: true,
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '500',
+            marginBottom: 4,
+          },
           tabBarStyle: {
-            backgroundColor: Colors.background,
-            borderTopColor: 'rgba(255, 255, 255, 0.1)',
-            height: 60,
-            paddingBottom: 8,
-            paddingTop: 8,
+            backgroundColor: 'rgba(18, 18, 18, 0.95)',
+            borderTopColor: 'rgba(255, 255, 255, 0.08)',
+            height: 62,
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
             elevation: 0,
             borderTopWidth: 1,
+            paddingTop: 8,
           },
           headerStyle: {
             backgroundColor: Colors.background,
@@ -55,7 +73,7 @@ export default function TabLayout() {
             title: 'Home',
             tabBarIcon: ({ color, focused }) => (
               <AnimatedIcon focused={focused}>
-                <Home color={color} size={26} />
+                <Home color={color} size={24} />
               </AnimatedIcon>
             ),
           }}
@@ -66,7 +84,7 @@ export default function TabLayout() {
             title: 'Search',
             tabBarIcon: ({ color, focused }) => (
               <AnimatedIcon focused={focused}>
-                <Search color={color} size={26} />
+                <Search color={color} size={24} />
               </AnimatedIcon>
             ),
           }}
@@ -74,10 +92,10 @@ export default function TabLayout() {
         <Tabs.Screen
           name="playlist"
           options={{
-            title: 'Playlist',
+            title: 'Library',
             tabBarIcon: ({ color, focused }) => (
               <AnimatedIcon focused={focused}>
-                <Library color={color} size={26} />
+                <Library color={color} size={24} />
               </AnimatedIcon>
             ),
           }}
@@ -85,10 +103,10 @@ export default function TabLayout() {
         <Tabs.Screen
           name="account"
           options={{
-            title: 'Account',
+            title: 'Profile',
             tabBarIcon: ({ color, focused }) => (
               <AnimatedIcon focused={focused}>
-                <User color={color} size={26} />
+                <User color={color} size={24} />
               </AnimatedIcon>
             ),
           }}
@@ -96,7 +114,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="downloader"
           options={{
-            href: null, // Hiding downloader from tab bar as per user request (Home, Search, Playlist, Acc)
+            href: null,
           }}
         />
       </Tabs>
@@ -105,3 +123,10 @@ export default function TabLayout() {
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  }
+});
