@@ -5,6 +5,8 @@ import { scanLocalMusic } from '@/src/services/localMedia';
 import { usePlayerStore } from '@/src/store/usePlayerStore';
 import { Music as MusicIcon, RefreshCcw } from 'lucide-react-native';
 
+import { TrackItem } from '@/src/components/Track/TrackItem';
+
 export default function LibraryScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -30,21 +32,13 @@ export default function LibraryScreen() {
   };
 
   const renderTrackItem = ({ item }: { item: any }) => (
-    <TouchableOpacity 
-      style={styles.trackItem}
+    <TrackItem
+      title={item.title || 'Unknown'}
+      artist={item.artist || 'Unknown Artist'}
+      thumbnail={item.thumbnail}
       onPress={() => setCurrentTrack(item)}
-    >
-      <View style={styles.iconContainer}>
-        <MusicIcon color={Colors.primary} size={24} />
-      </View>
-      <View style={styles.trackInfo}>
-        <Text style={styles.trackTitle} numberOfLines={1}>{item.title || 'Unknown'}</Text>
-        <Text style={styles.trackArtist}>{item.artist || 'Unknown'}</Text>
-      </View>
-      <Text style={styles.duration}>
-        {Math.floor(item.duration / 60)}:{(item.duration % 60).toString().padStart(2, '0')}
-      </Text>
-    </TouchableOpacity>
+      onOptionsPress={() => console.log('Options for:', item.title)}
+    />
   );
 
   if (loading) {
@@ -92,12 +86,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: Colors.surface,
+    paddingVertical: 15,
+    backgroundColor: Colors.background, // Match background
   },
   countText: {
     color: Colors.textMuted,
     fontSize: 14,
+    fontWeight: '500',
   },
   centerContainer: {
     flex: 1,
@@ -110,36 +105,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   listContent: {
-    padding: 10,
-  },
-  trackItem: {
-    flexDirection: 'row',
-    padding: 15,
-    marginBottom: 10,
-    backgroundColor: Colors.surface,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  iconContainer: {
-    marginRight: 15,
-  },
-  trackInfo: {
-    flex: 1,
-  },
-  trackTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: Colors.text,
-  },
-  trackArtist: {
-    fontSize: 14,
-    color: Colors.textMuted,
-    marginTop: 4,
-  },
-  duration: {
-    color: Colors.textMuted,
-    fontSize: 12,
-    marginLeft: 10,
+    paddingBottom: 100, // Space for mini player
   },
   emptyText: {
     color: Colors.textMuted,
@@ -148,3 +114,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   }
 });
+
