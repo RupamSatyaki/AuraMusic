@@ -163,10 +163,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   categoryTab: {
-    paddingHorizontal: 16, // Reduced from 20
-    paddingVertical: 6, // Reduced from 8
-    borderRadius: 15, // Adjusted for smaller height
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 15,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)', // Very low grayish/white bg
     marginRight: 8,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
