@@ -4,6 +4,8 @@ import { usePlayerStore } from '../store/usePlayerStore';
 
 interface AudioContextType {
   togglePlayback: () => Promise<void>;
+  playNext: () => void;
+  playPrevious: () => void;
   position: number;
   duration: number;
 }
@@ -14,7 +16,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const soundRef = useRef<Audio.Sound | null>(null);
   const [position, setPosition] = useState(0);
   const [duration, setDuration] = useState(0);
-  const { currentTrack, isPlaying, setIsPlaying } = usePlayerStore();
+  const { currentTrack, isPlaying, setIsPlaying, queue, setCurrentTrack } = usePlayerStore();
 
   useEffect(() => {
     return () => {
@@ -36,6 +38,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setDuration(status.durationMillis || 0);
       if (status.didJustFinish) {
         setIsPlaying(false);
+        playNext();
       }
     }
   };
@@ -71,8 +74,30 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const playNext = () => {
+    if (queue.length === 0) return;
+    const currentIndex = queue.findIndex(t => t.id === currentTrack?.id);
+    if (currentIndex < queue.length - 1) {
+      setCurrentTrack(queue[currentIndex + 1]);
+    } else {
+      // Loop back to start or stop
+      setCurrentTrack(queue[0]);
+    }
+  };
+
+  const playPrevious = () => {
+    if (queue.length === 0) return;
+    const currentIndex = queue.findIndex(t => t.id === currentTrack?.id);
+    if (currentIndex > 0) {
+      setCurrentTrack(queue[currentIndex - 1]);
+    } else {
+      // Loop to end
+      setCurrentTrack(queue[queue.length - 1]);
+    }
+  };
+
   return (
-    <AudioContext.Provider value={{ togglePlayback, position, duration }}>
+    <AudioContext.Provider value={{ togglePlayback, playNext, playPrevious, position, duration }}>
       {children}
     </AudioContext.Provider>
   );

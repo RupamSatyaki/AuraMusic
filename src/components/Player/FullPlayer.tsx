@@ -13,7 +13,7 @@ import { PlayerControls } from './PlayerControls';
 export const FullPlayer = () => {
   const insets = useSafeAreaInsets();
   const { currentTrack, isPlaying, isPlayerVisible, setPlayerVisible } = usePlayerStore();
-  const { togglePlayback, position, duration } = useAudioController();
+  const { togglePlayback, playNext, playPrevious, position, duration } = useAudioController();
 
   if (!currentTrack) return null;
 
@@ -45,6 +45,8 @@ export const FullPlayer = () => {
           <PlayerControls 
             isPlaying={isPlaying} 
             onTogglePlay={togglePlayback} 
+            onSkipNext={playNext}
+            onSkipPrev={playPrevious}
           />
         </View>
       </LinearGradient>
