@@ -41,16 +41,22 @@ export default function LibraryScreen() {
   const handleCategoryPress = (category: string) => {
     if (category === activeCategory) return;
     
-    setSelectedFolder(null); // Reset folder selection when changing categories
-    if (category === 'Songs' || category === 'Folders') {
-      setCategoryLoading(true);
-      setActiveCategory(category);
-      setTimeout(() => {
-        setCategoryLoading(false);
-      }, 300);
-    } else {
-      setActiveCategory(category);
-    }
+    setSelectedFolder(null);
+    setCategoryLoading(true);
+    setActiveCategory(category);
+    
+    // Smooth transition for all categories
+    setTimeout(() => {
+      setCategoryLoading(false);
+    }, 400);
+  };
+
+  const handleFolderPress = (folderName: string) => {
+    setCategoryLoading(true);
+    setSelectedFolder(folderName);
+    setTimeout(() => {
+      setCategoryLoading(false);
+    }, 400);
   };
 
   const sortedGroupedSongs = useMemo(() => {
@@ -167,7 +173,9 @@ export default function LibraryScreen() {
       return (
         <View style={styles.categoryLoadingContainer}>
           <ActivityIndicator size="medium" color={Colors.primary} />
-          <Text style={styles.loadingText}>Scanning folders...</Text>
+          <Text style={styles.loadingText}>
+            {selectedFolder ? `Opening ${selectedFolder}...` : 'Scanning folders...'}
+          </Text>
         </View>
       );
     }
@@ -178,7 +186,11 @@ export default function LibraryScreen() {
         <View style={styles.folderContentContainer}>
           <TouchableOpacity 
             style={styles.backButton} 
-            onPress={() => setSelectedFolder(null)}
+            onPress={() => {
+              setCategoryLoading(true);
+              setSelectedFolder(null);
+              setTimeout(() => setCategoryLoading(false), 300);
+            }}
           >
             <ChevronLeft color={Colors.primary} size={20} />
             <Text style={styles.backButtonText}>Back to Folders</Text>
@@ -211,7 +223,7 @@ export default function LibraryScreen() {
           <TouchableOpacity 
             key={folder.name} 
             style={styles.folderCard}
-            onPress={() => setSelectedFolder(folder.name)}
+            onPress={() => handleFolderPress(folder.name)}
           >
             <View style={styles.folderIconWrapper}>
               <Folder color="#888888" size={32} />
@@ -223,6 +235,24 @@ export default function LibraryScreen() {
             <Text style={styles.folderInfo}>Folder</Text>
           </TouchableOpacity>
         ))}
+      </View>
+    );
+  };
+
+  const renderComingSoon = () => {
+    if (categoryLoading) {
+      return (
+        <View style={styles.categoryLoadingContainer}>
+          <ActivityIndicator size="medium" color={Colors.primary} />
+          <Text style={styles.loadingText}>Loading {activeCategory}...</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.centerContainer}>
+        <MusicIcon color="rgba(255, 255, 255, 0.1)" size={80} style={{ marginBottom: 20 }} />
+        <Text style={styles.emptyText}>{activeCategory} feature is coming soon!</Text>
       </View>
     );
   };
@@ -307,9 +337,7 @@ export default function LibraryScreen() {
       ) : activeCategory === 'Folders' ? (
         renderFoldersList()
       ) : (
-        <View style={styles.centerContainer}>
-          <Text style={styles.emptyText}>{activeCategory} content coming soon!</Text>
-        </View>
+        renderComingSoon()
       )}
     </ScrollView>
   );
