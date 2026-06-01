@@ -9,9 +9,10 @@ import Animated, {
   interpolate
 } from 'react-native-reanimated';
 
-import { Colors } from '@/src/theme/colors';
-import { MiniPlayer } from '@/src/components/Player/MiniPlayer';
-import { FullPlayer } from '@/src/components/Player/FullPlayer';
+import { Colors } from '../../src/theme/colors';
+import TopHeader from '../../src/components/TopHeader';
+import { MiniPlayer } from '../../src/components/Player/MiniPlayer';
+import { FullPlayer } from '../../src/components/Player/FullPlayer';
 
 const AnimatedIcon = ({ children, focused }: { children: React.ReactNode; focused: boolean }) => {
   const scale = useSharedValue(1);
@@ -33,6 +34,7 @@ const AnimatedIcon = ({ children, focused }: { children: React.ReactNode; focuse
 export default function TabLayout() {
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
+      <TopHeader />
       <Tabs
         screenOptions={{
           headerShown: false,

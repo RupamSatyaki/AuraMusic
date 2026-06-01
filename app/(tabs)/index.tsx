@@ -54,12 +54,6 @@ export default function LibraryScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        <Text style={styles.countText}>{queue.length} Songs Found</Text>
-        <TouchableOpacity onPress={onRefresh} disabled={refreshing}>
-          <RefreshCcw color={Colors.primary} size={20} />
-        </TouchableOpacity>
-      </View>
       <FlatList
         data={queue}
         renderItem={renderTrackItem}
@@ -82,19 +76,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: Colors.background, // Match background
-  },
-  countText: {
-    color: Colors.textMuted,
-    fontSize: 14,
-    fontWeight: '500',
   },
   centerContainer: {
     flex: 1,
