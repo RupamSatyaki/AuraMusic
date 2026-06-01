@@ -74,13 +74,15 @@ export default function LibraryScreen() {
   const renderSongsList = () => {
     const sortedSongs = [...queue].sort((a, b) => a.title.localeCompare(b.title));
     const groupedSongs: any[] = [];
-    let lastChar = '';
+    let lastDivider = '';
 
     sortedSongs.forEach(song => {
       const firstChar = song.title.charAt(0).toUpperCase();
-      if (firstChar !== lastChar) {
-        groupedSongs.push({ type: 'divider', label: firstChar });
-        lastChar = firstChar;
+      const currentDivider = /[A-Z]/.test(firstChar) ? firstChar : '#';
+      
+      if (currentDivider !== lastDivider) {
+        groupedSongs.push({ type: 'divider', label: currentDivider });
+        lastDivider = currentDivider;
       }
       groupedSongs.push({ type: 'song', ...song });
     });
