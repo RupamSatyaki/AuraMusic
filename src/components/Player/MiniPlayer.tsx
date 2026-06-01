@@ -58,7 +58,7 @@ export const MiniPlayer = () => {
 const styles = StyleSheet.create({
   outerContainer: {
     position: 'absolute',
-    bottom: 85, // Above the tab bar (assuming standard height)
+    bottom: 70, // Adjusted for the smaller tab bar (60) + small gap
     left: 10,
     right: 10,
     zIndex: 100,
