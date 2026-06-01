@@ -4,18 +4,6 @@ import { Colors } from '@/src/theme/colors';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { scanLocalMusic } from '@/src/services/localMedia';
 import { usePlayerStore } from '@/src/store/usePlayerStore';
-import { Shuffle, PlayCircle, RefreshCw, MessageSquare, Music as MusicIcon, ChevronRight } from 'lucide-react-native';
-
-import { TrackItem } from '@/src/components/Track/TrackItem';
-
-const CATEGORIES = ['For You', 'Songs', 'Folders', 'Albums', 'Artists', 'Genres'];
-
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Image, FlatList } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Colors } from '@/src/theme/colors';
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { scanLocalMusic } from '@/src/services/localMedia';
-import { usePlayerStore } from '@/src/store/usePlayerStore';
 import { Shuffle, PlayCircle, RefreshCw, MessageSquare, Music as MusicIcon, ChevronRight, Folder, ChevronLeft } from 'lucide-react-native';
 
 import { TrackItem } from '@/src/components/Track/TrackItem';
@@ -88,8 +76,6 @@ export default function LibraryScreen() {
   const folders = useMemo(() => {
     const folderMap: { [key: string]: any[] } = {};
     queue.forEach(track => {
-      // Trying to extract folder from URI (expo-media-library doesn't provide it directly in a clean way)
-      // We'll group by a mock folder structure based on filename if path is not available
       const folderName = track.uri && track.uri.includes('/') 
         ? track.uri.split('/').slice(-2, -1)[0] 
         : 'Internal Storage';
@@ -258,7 +244,6 @@ export default function LibraryScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
       }
     >
-      {/* Top Filter Tabs */}
       <ScrollView 
         horizontal 
         showsHorizontalScrollIndicator={false} 
@@ -280,7 +265,6 @@ export default function LibraryScreen() {
 
       {activeCategory === 'For You' ? (
         <>
-          {/* Quick Actions Grid */}
           <View style={styles.actionsGrid}>
             {renderActionCard('Shuffle', Shuffle, () => {})}
             {renderActionCard('Play', PlayCircle, () => {})}
@@ -288,7 +272,6 @@ export default function LibraryScreen() {
             {renderActionCard('Feedback', MessageSquare, () => {})}
           </View>
 
-          {/* Sections */}
           {renderSectionHeader('Last Added')}
           <FlatList
             horizontal
@@ -341,7 +324,7 @@ const styles = StyleSheet.create({
     paddingBottom: 120,
   },
   categoryScroll: {
-    paddingVertical: 10, // Reduced from 15
+    paddingVertical: 10,
   },
   categoryContent: {
     paddingHorizontal: 16,
@@ -350,7 +333,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 6,
     borderRadius: 15,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)', // Very low grayish/white bg
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     marginRight: 8,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.05)',
@@ -361,7 +344,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     color: Colors.textMuted,
-    fontSize: 13, // Reduced from 14
+    fontSize: 13,
     fontWeight: '600',
   },
   activeCategoryText: {
@@ -375,7 +358,7 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     width: '45%',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)', // Subtle grayish bg
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderRadius: 16,
     padding: 12,
     margin: '2.5%',
@@ -389,10 +372,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
-    backgroundColor: 'transparent', // Removed background
+    backgroundColor: 'transparent',
   },
   actionTitle: {
-    color: '#888888', // Gray text to match icons
+    color: '#888888',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -401,8 +384,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginTop: 20, // Reduced from 25
-    marginBottom: 12, // Reduced from 15
+    marginTop: 20,
+    marginBottom: 12,
   },
   sectionTitle: {
     color: Colors.text,
@@ -457,6 +440,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: Colors.background,
+    paddingVertical: 50,
   },
   loadingText: {
     color: Colors.textMuted,
@@ -577,5 +561,10 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     fontSize: 14,
   },
+  emptyText: {
+    color: Colors.textMuted,
+    fontSize: 16,
+    textAlign: 'center',
+    paddingHorizontal: 40,
+  },
 });
-
