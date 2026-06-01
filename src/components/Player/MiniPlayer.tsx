@@ -6,13 +6,17 @@ import { useAudioController } from '../../hooks/useAudioController';
 import { Colors } from '../../theme/colors';
 
 export const MiniPlayer = () => {
-  const { currentTrack, isPlaying } = usePlayerStore();
+  const { currentTrack, isPlaying, setPlayerVisible } = usePlayerStore();
   const { togglePlayback } = useAudioController();
 
   if (!currentTrack) return null;
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity 
+      style={styles.container} 
+      onPress={() => setPlayerVisible(true)}
+      activeOpacity={0.9}
+    >
       <View style={styles.content}>
         <View style={styles.trackInfo}>
           <Text style={styles.title} numberOfLines={1}>{currentTrack.title}</Text>
@@ -28,7 +32,7 @@ export const MiniPlayer = () => {
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 

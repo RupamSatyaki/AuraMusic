@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Audio } from 'expo-av';
 import { usePlayerStore } from '../store/usePlayerStore';
 
 export const useAudioController = () => {
   const soundRef = useRef<Audio.Sound | null>(null);
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
   const { currentTrack, isPlaying, setIsPlaying } = usePlayerStore();
 
   useEffect(() => {
@@ -20,6 +22,16 @@ export const useAudioController = () => {
     }
   }, [currentTrack]);
 
+  const onPlaybackStatusUpdate = (status: any) => {
+    if (status.isLoaded) {
+      setPosition(status.positionMillis);
+      setDuration(status.durationMillis || 0);
+      if (status.didJustFinish) {
+        setIsPlaying(false);
+      }
+    }
+  };
+
   const playTrack = async (url: string) => {
     try {
       if (soundRef.current) {
@@ -28,17 +40,12 @@ export const useAudioController = () => {
 
       const { sound } = await Audio.Sound.createAsync(
         { uri: url },
-        { shouldPlay: true }
+        { shouldPlay: true },
+        onPlaybackStatusUpdate
       );
       
       soundRef.current = sound;
       setIsPlaying(true);
-
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          setIsPlaying(false);
-        }
-      });
     } catch (error) {
       console.error('Error playing track:', error);
     }
@@ -56,5 +63,5 @@ export const useAudioController = () => {
     }
   };
 
-  return { togglePlayback };
+  return { togglePlayback, position, duration };
 };

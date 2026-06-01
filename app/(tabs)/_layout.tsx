@@ -5,6 +5,7 @@ import Animated, { useAnimatedStyle, withSpring } from 'react-native-reanimated'
 
 import { Colors } from '@/src/theme/colors';
 import { MiniPlayer } from '@/src/components/Player/MiniPlayer';
+import { FullPlayer } from '@/src/components/Player/FullPlayer';
 
 const AnimatedIcon = ({ children, focused }: { children: React.ReactNode; focused: boolean }) => {
   const animatedStyle = useAnimatedStyle(() => {
@@ -99,6 +100,7 @@ export default function TabLayout() {
         />
       </Tabs>
       <MiniPlayer />
+      <FullPlayer />
     </View>
   );
 }
