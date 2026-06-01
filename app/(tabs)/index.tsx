@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/src/theme/colors';
 import { useEffect, useState, useCallback } from 'react';
 import { scanLocalMusic } from '@/src/services/localMedia';
@@ -8,6 +9,7 @@ import { Music as MusicIcon, RefreshCcw } from 'lucide-react-native';
 import { TrackItem } from '@/src/components/Track/TrackItem';
 
 export default function LibraryScreen() {
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const { queue, addToQueue, clearQueue, setCurrentTrack } = usePlayerStore();
@@ -52,7 +54,7 @@ export default function LibraryScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <Text style={styles.countText}>{queue.length} Songs Found</Text>
         <TouchableOpacity onPress={onRefresh} disabled={refreshing}>
           <RefreshCcw color={Colors.primary} size={20} />

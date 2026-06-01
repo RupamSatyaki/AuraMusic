@@ -26,6 +26,7 @@ export default function TabLayout() {
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
       <Tabs
         screenOptions={{
+          headerShown: false,
           tabBarActiveTintColor: '#FFFFFF',
           tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.5)',
           tabBarStyle: {

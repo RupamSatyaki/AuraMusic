@@ -27,6 +27,11 @@
       ],
       "package": "com.rupamsatyaki.auramusic"
     },
+    "androidStatusBar": {
+      "barStyle": "light-content",
+      "backgroundColor": "#00000000",
+      "translucent": true
+    },
     "web": {
       "bundler": "metro",
       "output": "static",

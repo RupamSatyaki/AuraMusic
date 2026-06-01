@@ -1,6 +1,7 @@
 import React from 'react';
-import { Modal, View, StyleSheet, SafeAreaView } from 'react-native';
+import { Modal, View, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePlayerStore } from '../../store/usePlayerStore';
 import { useAudioController } from '../../hooks/useAudioController';
 import { PlayerHeader } from './PlayerHeader';
@@ -10,6 +11,7 @@ import { PlayerProgressBar } from './PlayerProgressBar';
 import { PlayerControls } from './PlayerControls';
 
 export const FullPlayer = () => {
+  const insets = useSafeAreaInsets();
   const { currentTrack, isPlaying, isPlayerVisible, setPlayerVisible } = usePlayerStore();
   const { togglePlayback, position, duration } = useAudioController();
 
@@ -24,29 +26,27 @@ export const FullPlayer = () => {
     >
       <LinearGradient
         colors={['#424242', '#121212', '#000000']}
-        style={styles.container}
+        style={[styles.container, { paddingTop: insets.top }]}
       >
-        <SafeAreaView style={styles.safeArea}>
-          <PlayerHeader 
-            onClose={() => setPlayerVisible(false)} 
+        <PlayerHeader 
+          onClose={() => setPlayerVisible(false)} 
+          title={currentTrack.title} 
+        />
+        
+        <View style={styles.content}>
+          <PlayerAlbumArt uri={currentTrack.thumbnail} />
+          <PlayerInfo 
             title={currentTrack.title} 
+            artist={currentTrack.artist} 
           />
           
-          <View style={styles.content}>
-            <PlayerAlbumArt uri={currentTrack.thumbnail} />
-            <PlayerInfo 
-              title={currentTrack.title} 
-              artist={currentTrack.artist} 
-            />
-            
-            <PlayerProgressBar position={position} duration={duration} />
-            
-            <PlayerControls 
-              isPlaying={isPlaying} 
-              onTogglePlay={togglePlayback} 
-            />
-          </View>
-        </SafeAreaView>
+          <PlayerProgressBar position={position} duration={duration} />
+          
+          <PlayerControls 
+            isPlaying={isPlaying} 
+            onTogglePlay={togglePlayback} 
+          />
+        </View>
       </LinearGradient>
     </Modal>
   );
