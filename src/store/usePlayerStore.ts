@@ -7,6 +7,8 @@ export interface Track {
   artist?: string;
   thumbnail?: string;
   duration?: number;
+  filename?: string;
+  uri?: string;
 }
 
 interface PlayerState {

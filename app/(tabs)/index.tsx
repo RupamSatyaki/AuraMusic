@@ -10,12 +10,25 @@ import { TrackItem } from '@/src/components/Track/TrackItem';
 
 const CATEGORIES = ['For You', 'Songs', 'Folders', 'Albums', 'Artists', 'Genres'];
 
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Image, FlatList } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Colors } from '@/src/theme/colors';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { scanLocalMusic } from '@/src/services/localMedia';
+import { usePlayerStore } from '@/src/store/usePlayerStore';
+import { Shuffle, PlayCircle, RefreshCw, MessageSquare, Music as MusicIcon, ChevronRight, Folder, ChevronLeft } from 'lucide-react-native';
+
+import { TrackItem } from '@/src/components/Track/TrackItem';
+
+const CATEGORIES = ['For You', 'Songs', 'Folders', 'Albums', 'Artists', 'Genres'];
+
 export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState('For You');
   const [categoryLoading, setCategoryLoading] = useState(false);
+  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const { queue, addToQueue, clearQueue, setCurrentTrack } = usePlayerStore();
 
   const loadMusic = useCallback(async () => {
@@ -40,10 +53,10 @@ export default function LibraryScreen() {
   const handleCategoryPress = (category: string) => {
     if (category === activeCategory) return;
     
-    if (category === 'Songs') {
+    setSelectedFolder(null); // Reset folder selection when changing categories
+    if (category === 'Songs' || category === 'Folders') {
       setCategoryLoading(true);
       setActiveCategory(category);
-      // Small timeout to allow the tab switch to render first
       setTimeout(() => {
         setCategoryLoading(false);
       }, 300);
@@ -70,6 +83,27 @@ export default function LibraryScreen() {
       grouped.push({ type: 'song', ...song });
     });
     return grouped;
+  }, [queue]);
+
+  const folders = useMemo(() => {
+    const folderMap: { [key: string]: any[] } = {};
+    queue.forEach(track => {
+      // Trying to extract folder from URI (expo-media-library doesn't provide it directly in a clean way)
+      // We'll group by a mock folder structure based on filename if path is not available
+      const folderName = track.uri && track.uri.includes('/') 
+        ? track.uri.split('/').slice(-2, -1)[0] 
+        : 'Internal Storage';
+      
+      if (!folderMap[folderName]) {
+        folderMap[folderName] = [];
+      }
+      folderMap[folderName].push(track);
+    });
+
+    return Object.keys(folderMap).map(name => ({
+      name,
+      tracks: folderMap[name]
+    })).sort((a, b) => a.name.localeCompare(b.name));
   }, [queue]);
 
   const renderActionCard = (title: string, Icon: any, onPress: () => void) => (
@@ -138,6 +172,71 @@ export default function LibraryScreen() {
             />
           );
         })}
+      </View>
+    );
+  };
+
+  const renderFoldersList = () => {
+    if (categoryLoading) {
+      return (
+        <View style={styles.categoryLoadingContainer}>
+          <ActivityIndicator size="medium" color={Colors.primary} />
+          <Text style={styles.loadingText}>Scanning folders...</Text>
+        </View>
+      );
+    }
+
+    if (selectedFolder) {
+      const folderData = folders.find(f => f.name === selectedFolder);
+      return (
+        <View style={styles.folderContentContainer}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={() => setSelectedFolder(null)}
+          >
+            <ChevronLeft color={Colors.primary} size={20} />
+            <Text style={styles.backButtonText}>Back to Folders</Text>
+          </TouchableOpacity>
+          
+          <View style={styles.folderHeader}>
+            <Folder color={Colors.primary} size={30} fill={Colors.primary + '20'} />
+            <View style={styles.folderHeaderText}>
+              <Text style={styles.folderTitle}>{selectedFolder}</Text>
+              <Text style={styles.folderSubtitle}>{folderData?.tracks.length} Songs</Text>
+            </View>
+          </View>
+
+          {folderData?.tracks.map(track => (
+            <TrackItem
+              key={track.id}
+              title={track.title}
+              artist={track.artist || 'Unknown Artist'}
+              thumbnail={track.thumbnail}
+              onPress={() => setCurrentTrack(track)}
+            />
+          ))}
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.foldersGrid}>
+        {folders.map((folder) => (
+          <TouchableOpacity 
+            key={folder.name} 
+            style={styles.folderCard}
+            onPress={() => setSelectedFolder(folder.name)}
+          >
+            <View style={styles.folderIconWrapper}>
+              <Folder color="#888888" size={32} />
+              <View style={styles.trackCountBadge}>
+                <Text style={styles.trackCountText}>{folder.tracks.length}</Text>
+              </View>
+            </View>
+            <Text style={styles.folderName} numberOfLines={1}>{folder.name}</Text>
+            <Text style={styles.folderInfo}>Folder</Text>
+          </TouchableOpacity>
+        ))}
       </View>
     );
   };
@@ -222,6 +321,8 @@ export default function LibraryScreen() {
         </>
       ) : activeCategory === 'Songs' ? (
         renderSongsList()
+      ) : activeCategory === 'Folders' ? (
+        renderFoldersList()
       ) : (
         <View style={styles.centerContainer}>
           <Text style={styles.emptyText}>{activeCategory} content coming soon!</Text>
@@ -389,6 +490,92 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     marginLeft: 10,
+  },
+  foldersGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 12,
+    marginTop: 10,
+  },
+  folderCard: {
+    width: '30%',
+    margin: '1.66%',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  folderIconWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+    position: 'relative',
+  },
+  trackCountBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  trackCountText: {
+    color: '#000',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  folderName: {
+    color: Colors.text,
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  folderInfo: {
+    color: Colors.textMuted,
+    fontSize: 10,
+    marginTop: 2,
+  },
+  folderContentContainer: {
+    paddingBottom: 20,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  backButtonText: {
+    color: Colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  folderHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    marginBottom: 10,
+  },
+  folderHeaderText: {
+    marginLeft: 15,
+  },
+  folderTitle: {
+    color: Colors.text,
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  folderSubtitle: {
+    color: Colors.textMuted,
+    fontSize: 14,
   },
 });
 
