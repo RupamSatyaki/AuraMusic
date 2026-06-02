@@ -1,8 +1,8 @@
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Image, FlatList } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Image, FlatList, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/src/theme/colors';
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import { scanLocalMusic } from '@/src/services/localMedia';
+import { scanLocalMusic, pickLocalFiles } from '@/src/services/localMedia';
 import { usePlayerStore } from '@/src/store/usePlayerStore';
 import { Shuffle, PlayCircle, RefreshCw, MessageSquare, Music as MusicIcon, ChevronRight, Folder, ChevronLeft } from 'lucide-react-native';
 
@@ -33,9 +33,29 @@ export default function LibraryScreen() {
     loadMusic();
   }, [loadMusic]);
 
+  const handleScan = useCallback(async () => {
+    if (Platform.OS === 'web') {
+      const pickedTracks = await pickLocalFiles();
+      pickedTracks.forEach(track => {
+        addToQueue(track as any);
+      });
+      // Optionally set the first picked track as current
+      if (pickedTracks.length > 0) {
+        setCurrentTrack(pickedTracks[0] as any);
+      }
+    } else {
+      setRefreshing(true);
+      loadMusic();
+    }
+  }, [loadMusic, addToQueue, setCurrentTrack]);
+
   const onRefresh = () => {
-    setRefreshing(true);
-    loadMusic();
+    if (Platform.OS === 'web') {
+      loadMusic(); // Reload samples
+    } else {
+      setRefreshing(true);
+      loadMusic();
+    }
   };
 
   const handleCategoryPress = (category: string) => {
@@ -82,9 +102,13 @@ export default function LibraryScreen() {
   const folders = useMemo(() => {
     const folderMap: { [key: string]: any[] } = {};
     queue.forEach(track => {
-      const folderName = track.uri && track.uri.includes('/') 
-        ? track.uri.split('/').slice(-2, -1)[0] 
-        : 'Internal Storage';
+      let folderName = 'Internal Storage';
+      
+      if (typeof track.uri === 'string' && track.uri.includes('/')) {
+        folderName = track.uri.split('/').slice(-2, -1)[0];
+      } else if (typeof track.uri === 'number') {
+        folderName = 'App Music';
+      }
       
       if (!folderMap[folderName]) {
         folderMap[folderName] = [];
@@ -298,7 +322,7 @@ export default function LibraryScreen() {
           <View style={styles.actionsGrid}>
             {renderActionCard('Shuffle', Shuffle, () => {})}
             {renderActionCard('Play', PlayCircle, () => {})}
-            {renderActionCard('Scan', RefreshCw, onRefresh)}
+            {renderActionCard('Scan', RefreshCw, handleScan)}
             {renderActionCard('Feedback', MessageSquare, () => {})}
           </View>
 

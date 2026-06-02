@@ -44,14 +44,16 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const playTrack = async (url: string) => {
+  const playTrack = async (source: any) => {
     try {
       if (soundRef.current) {
         await soundRef.current.unloadAsync();
       }
 
+      const audioSource = typeof source === 'string' ? { uri: source } : source;
+
       const { sound } = await Audio.Sound.createAsync(
-        { uri: url },
+        audioSource,
         { shouldPlay: true },
         onPlaybackStatusUpdate
       );
