@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Audio } from 'expo-av';
 import { usePlayerStore } from '../store/usePlayerStore';
+import { getYouTubeAudioStream } from '../api/youtubeApi';
 
 interface AudioContextType {
   togglePlayback: () => Promise<void>;
@@ -48,21 +49,38 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     try {
       // Clean up previous sound completely
       if (soundRef.current) {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
+        try {
+          await soundRef.current.stopAsync();
+          await soundRef.current.unloadAsync();
+        } catch (e) {
+          console.log('Cleanup error (non-fatal):', e);
+        }
         soundRef.current = null;
       }
 
       let audioSource;
       if (typeof source === 'string') {
-        const cleanedUrl = source.trim();
+        let cleanedUrl = source.trim();
         if (!cleanedUrl) return;
+
+        // Special handling for YouTube
+        if (cleanedUrl.includes('YOUTUBE_ID:') || (cleanedUrl.includes('pipedapi') && currentTrack?.id.startsWith('yt-'))) {
+          const videoId = currentTrack.id.replace('yt-', '');
+          const resolvedStream = await getYouTubeAudioStream(videoId);
+          if (resolvedStream) {
+            cleanedUrl = resolvedStream;
+          } else {
+            console.error('Failed to resolve YT stream');
+            return;
+          }
+        }
+
         audioSource = { uri: cleanedUrl };
       } else {
         audioSource = source;
       }
 
-      console.log('Final audio source:', audioSource);
+      console.log('Playing from:', audioSource.uri?.substring(0, 50) + '...');
 
       const { sound } = await Audio.Sound.createAsync(
         audioSource,

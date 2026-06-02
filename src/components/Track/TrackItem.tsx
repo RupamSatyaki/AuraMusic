@@ -17,7 +17,7 @@ interface TrackItemProps {
   isPlaying?: boolean;
 }
 
-export const TrackItem = ({
+export const TrackItem = React.memo(({
   title,
   artist,
   thumbnail,
@@ -43,7 +43,7 @@ export const TrackItem = ({
       )}
     </TouchableOpacity>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

@@ -1,20 +1,20 @@
 import { Platform } from 'react-native';
 import { Track } from '../types/track';
 
-// Using the most stable public deployment of the JioSaavn API
-const SAAVN_BASE_URL = 'https://jiosaavn-api.vercel.app/api';
+// Using a more stable and widely used JioSaavn API instance
+const SAAVN_BASE_URL = 'https://saavn.dev/api';
 const PROXY_URL = 'https://api.allorigins.win/get?url=';
 
 /**
  * Searches for full songs using the JioSaavn API
  */
-export const searchTracks = async (query: string): Promise<Track[]> => {
+export const searchTracks = async (query: string, page: number = 1): Promise<Track[]> => {
   try {
     const cleanQuery = query.trim();
     if (!cleanQuery) return [];
 
-    // Manually construct the URL to be 100% safe
-    const targetUrl = `${SAAVN_BASE_URL}/search/songs?query=${encodeURIComponent(cleanQuery)}&limit=20`;
+    // Saavn.dev uses /search/songs?query=...&page=...&limit=...
+    const targetUrl = `${SAAVN_BASE_URL}/search/songs?query=${encodeURIComponent(cleanQuery)}&page=${page}&limit=20`;
     
     let finalUrl = targetUrl;
     
@@ -26,13 +26,29 @@ export const searchTracks = async (query: string): Promise<Track[]> => {
     console.log('Fetching Search:', finalUrl);
     
     const response = await fetch(finalUrl);
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const responseText = await response.text();
     
-    let json = await response.json();
+    if (!response.ok) {
+      console.error('API Error Response:', responseText.substring(0, 200));
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    let json;
+    try {
+      json = JSON.parse(responseText);
+    } catch (e) {
+      console.error('Failed to parse main response as JSON:', responseText.substring(0, 100));
+      return [];
+    }
     
     // If using AllOrigins, the actual data is inside json.contents
     if (Platform.OS === 'web' && json.contents) {
-      json = JSON.parse(json.contents);
+      try {
+        json = JSON.parse(json.contents);
+      } catch (e) {
+        console.error('Failed to parse AllOrigins contents as JSON:', json.contents.substring(0, 100));
+        return [];
+      }
     }
 
     // Extract results - different API versions use different structures

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -15,7 +15,7 @@ import { Colors } from '@/src/theme/colors';
 import { Search, X, Mic, Music } from 'lucide-react-native';
 import { TrackItem } from '@/src/components/Track/TrackItem';
 import { usePlayerStore } from '@/src/store/usePlayerStore';
-import { searchTracks } from '@/src/api/musicApi';
+import { useSearchTracks } from '@/src/hooks/useSearchTracks';
 import { SEARCH_CATEGORIES } from '@/src/constants/search';
 import { Track } from '@/src/types/track';
 
@@ -24,27 +24,20 @@ const COLUMN_WIDTH = (width - 48) / 2;
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<Track[]>([]);
+  const { 
+    query: searchQuery, 
+    results, 
+    loading, 
+    loadingMore, 
+    handleQueryChange, 
+    loadMore, 
+    clearSearch,
+    hasMore,
+    searchSource,
+    toggleSource
+  } = useSearchTracks();
+  
   const { setCurrentTrack, currentTrack, isPlaying, addToQueue } = usePlayerStore();
-
-  const handleSearch = useCallback(async (text: string) => {
-    setSearchQuery(text);
-    if (text.trim().length > 2) {
-      setLoading(true);
-      const searchResults = await searchTracks(text);
-      setResults(searchResults);
-      setLoading(false);
-    } else if (text.trim().length === 0) {
-      setResults([]);
-    }
-  }, []);
-
-  const clearSearch = () => {
-    setSearchQuery('');
-    setResults([]);
-  };
 
   const handleTrackPress = (track: Track) => {
     addToQueue(track);
@@ -55,7 +48,7 @@ export default function SearchScreen() {
     <TouchableOpacity 
       style={[styles.categoryCard, { backgroundColor: item.color }]}
       activeOpacity={0.8}
-      onPress={() => handleSearch(item.title)}
+      onPress={() => handleQueryChange(item.title)}
     >
       <Text style={styles.categoryTitle}>{item.title}</Text>
       <View style={styles.categoryIconContainer}>
@@ -64,9 +57,49 @@ export default function SearchScreen() {
     </TouchableOpacity>
   );
 
+  const renderFooter = () => {
+    if (!loadingMore) return null;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={Colors.primary} />
+      </View>
+    );
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top + 10 }]}>
-      <Text style={styles.headerTitle}>Search</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.headerTitle}>Search</Text>
+        <TouchableOpacity 
+          style={[
+            styles.sourceToggle, 
+            { 
+              backgroundColor: 
+                searchSource === 'itunes' ? '#007AFF22' : 
+                searchSource === 'youtube' ? '#FF000022' : '#27d05d22' 
+            }
+          ]} 
+          onPress={toggleSource}
+        >
+          <Music 
+            color={
+              searchSource === 'itunes' ? '#007AFF' : 
+              searchSource === 'youtube' ? '#FF0000' : '#1DB954'
+            } 
+            size={20} 
+          />
+          <Text style={[
+            styles.sourceText, 
+            { 
+              color: 
+                searchSource === 'itunes' ? '#007AFF' : 
+                searchSource === 'youtube' ? '#FF0000' : '#1DB954' 
+            }
+          ]}>
+            {searchSource === 'itunes' ? 'iTunes' : searchSource === 'youtube' ? 'YouTube' : 'Saavn'}
+          </Text>
+        </TouchableOpacity>
+      </View>
       
       {/* Search Bar */}
       <View style={styles.searchBarContainer}>
@@ -77,7 +110,7 @@ export default function SearchScreen() {
             placeholderTextColor={Colors.textMuted}
             style={styles.searchInput}
             value={searchQuery}
-            onChangeText={handleSearch}
+            onChangeText={handleQueryChange}
           />
           {searchQuery.length > 0 ? (
             <TouchableOpacity onPress={clearSearch}>
@@ -112,7 +145,7 @@ export default function SearchScreen() {
           ) : results.length > 0 ? (
             <FlatList
               data={results}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item, index) => `${item.id}-${index}`}
               renderItem={({ item }) => {
                 const isActive = currentTrack?.id === item.id;
                 return (
@@ -126,6 +159,9 @@ export default function SearchScreen() {
                   />
                 );
               }}
+              onEndReached={loadMore}
+              onEndReachedThreshold={0.5}
+              ListFooterComponent={renderFooter}
               contentContainerStyle={styles.resultsList}
             />
           ) : (
@@ -149,8 +185,25 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: 'bold',
     color: Colors.text,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
     marginBottom: 16,
+  },
+  sourceToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    gap: 6,
+  },
+  sourceText: {
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   searchBarContainer: {
     paddingHorizontal: 16,
@@ -229,4 +282,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
   },
+  footerLoader: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  }
 });
