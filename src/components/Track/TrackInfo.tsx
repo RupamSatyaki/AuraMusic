@@ -5,12 +5,13 @@ import { Colors } from '../../theme/colors';
 interface TrackInfoProps {
   title: string;
   artist?: string;
+  isActive?: boolean;
 }
 
-export const TrackInfo = ({ title, artist }: TrackInfoProps) => {
+export const TrackInfo = ({ title, artist, isActive }: TrackInfoProps) => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title} numberOfLines={1}>
+      <Text style={[styles.title, isActive && { color: Colors.primary }]} numberOfLines={1}>
         {title}
       </Text>
       <Text style={styles.artist} numberOfLines={1}>

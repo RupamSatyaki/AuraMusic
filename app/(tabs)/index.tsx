@@ -4,7 +4,7 @@ import { Colors } from '@/src/theme/colors';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { scanLocalMusic, pickLocalFiles } from '@/src/services/localMedia';
 import { usePlayerStore } from '@/src/store/usePlayerStore';
-import { Shuffle, PlayCircle, RefreshCw, MessageSquare, Music as MusicIcon, ChevronRight, Folder, ChevronLeft } from 'lucide-react-native';
+import { Shuffle, PlayCircle, RefreshCw, MessageSquare, Music as MusicIcon, ChevronRight, Folder, ChevronLeft, Volume2 } from 'lucide-react-native';
 
 import { TrackItem } from '@/src/components/Track/TrackItem';
 
@@ -17,7 +17,7 @@ export default function LibraryScreen() {
   const [activeCategory, setActiveCategory] = useState('For You');
   const [categoryLoading, setCategoryLoading] = useState(false);
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-  const { queue, addToQueue, clearQueue, setCurrentTrack } = usePlayerStore();
+  const { queue, addToQueue, clearQueue, setCurrentTrack, currentTrack, isPlaying } = usePlayerStore();
 
   const loadMusic = useCallback(async () => {
     const tracks = await scanLocalMusic();
@@ -141,21 +141,32 @@ export default function LibraryScreen() {
     </View>
   );
 
-  const renderHorizontalTrack = ({ item }: { item: any }) => (
-    <TouchableOpacity style={styles.horizontalTrack} onPress={() => setCurrentTrack(item)}>
-      <View style={styles.trackBanner}>
-        {item.thumbnail ? (
-          <Image source={{ uri: item.thumbnail }} style={styles.bannerImage} />
-        ) : (
-          <View style={styles.bannerPlaceholder}>
-            <MusicIcon color={Colors.primary} size={40} />
-          </View>
-        )}
-      </View>
-      <Text style={styles.trackName} numberOfLines={1}>{item.title}</Text>
-      <Text style={styles.trackArtist} numberOfLines={1}>{item.artist || 'Unknown Artist'}</Text>
-    </TouchableOpacity>
-  );
+  const renderHorizontalTrack = ({ item }: { item: any }) => {
+    const isActive = currentTrack?.id === item.id;
+    return (
+      <TouchableOpacity 
+        style={[styles.horizontalTrack, isActive && styles.activeHorizontalTrack]} 
+        onPress={() => setCurrentTrack(item)}
+      >
+        <View style={[styles.trackBanner, isActive && styles.activeTrackBanner]}>
+          {item.thumbnail ? (
+            <Image source={{ uri: item.thumbnail }} style={styles.bannerImage} />
+          ) : (
+            <View style={styles.bannerPlaceholder}>
+              <MusicIcon color={isActive ? Colors.primary : 'rgba(255,255,255,0.2)'} size={40} />
+            </View>
+          )}
+          {isActive && isPlaying && (
+            <View style={styles.bannerPlayingOverlay}>
+              <Volume2 color={Colors.primary} size={30} />
+            </View>
+          )}
+        </View>
+        <Text style={[styles.trackName, isActive && { color: Colors.primary }]} numberOfLines={1}>{item.title}</Text>
+        <Text style={styles.trackArtist} numberOfLines={1}>{item.artist || 'Unknown Artist'}</Text>
+      </TouchableOpacity>
+    );
+  };
 
   const renderSongsList = () => {
     if (categoryLoading) {
@@ -178,12 +189,15 @@ export default function LibraryScreen() {
               </View>
             );
           }
+          const isActive = currentTrack?.id === item.id;
           return (
             <TrackItem
               key={item.id}
               title={item.title}
               artist={item.artist || 'Unknown Artist'}
               thumbnail={item.thumbnail}
+              isActive={isActive}
+              isPlaying={isActive && isPlaying}
               onPress={() => setCurrentTrack(item)}
             />
           );
@@ -228,15 +242,20 @@ export default function LibraryScreen() {
             </View>
           </View>
 
-          {folderData?.tracks.map(track => (
-            <TrackItem
-              key={track.id}
-              title={track.title}
-              artist={track.artist || 'Unknown Artist'}
-              thumbnail={track.thumbnail}
-              onPress={() => setCurrentTrack(track)}
-            />
-          ))}
+          {folderData?.tracks.map(track => {
+            const isActive = currentTrack?.id === track.id;
+            return (
+              <TrackItem
+                key={track.id}
+                title={track.title}
+                artist={track.artist || 'Unknown Artist'}
+                thumbnail={track.thumbnail}
+                isActive={isActive}
+                isPlaying={isActive && isPlaying}
+                onPress={() => setCurrentTrack(track)}
+              />
+            );
+          })}
         </View>
       );
     }
@@ -467,6 +486,20 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     marginBottom: 8,
+    position: 'relative',
+  },
+  activeTrackBanner: {
+    borderWidth: 2,
+    borderColor: Colors.primary,
+  },
+  bannerPlayingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeHorizontalTrack: {
+    opacity: 1,
   },
   bannerImage: {
     width: '100%',
