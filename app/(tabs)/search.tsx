@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -12,56 +12,50 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '@/src/theme/colors';
-import { Search, X, Mic, Play, ChevronRight, Music } from 'lucide-react-native';
+import { Search, X, Mic, Music } from 'lucide-react-native';
 import { TrackItem } from '@/src/components/Track/TrackItem';
 import { usePlayerStore } from '@/src/store/usePlayerStore';
+import { searchTracks } from '@/src/api/musicApi';
+import { SEARCH_CATEGORIES } from '@/src/constants/search';
+import { Track } from '@/src/types/track';
 
 const { width } = Dimensions.get('window');
 const COLUMN_WIDTH = (width - 48) / 2;
-
-const CATEGORIES = [
-  { id: '1', title: 'Podcasts', color: '#E13300' },
-  { id: '2', title: 'Live Events', color: '#7358FF' },
-  { id: '3', title: 'Made For You', color: '#1E3264' },
-  { id: '4', title: 'New Releases', color: '#E8115B' },
-  { id: '5', title: 'BGM', color: '#509BF5' },
-  { id: '6', title: 'Pop', color: '#148A08' },
-  { id: '7', title: 'Indie', color: '#D84000' },
-  { id: '8', title: 'Hip-Hop', color: '#BC5900' },
-  { id: '9', title: 'Rock', color: '#E91429' },
-  { id: '10', title: 'Discover', color: '#8D67AB' },
-];
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<any[]>([]);
-  const { setCurrentTrack, currentTrack, isPlaying } = usePlayerStore();
+  const [results, setResults] = useState<Track[]>([]);
+  const { setCurrentTrack, currentTrack, isPlaying, addToQueue } = usePlayerStore();
 
-  const handleSearch = (text: string) => {
+  const handleSearch = useCallback(async (text: string) => {
     setSearchQuery(text);
-    if (text.length > 2) {
+    if (text.trim().length > 2) {
       setLoading(true);
-      // Mock search results for now
-      setTimeout(() => {
-        setLoading(false);
-        // This will be replaced by actual API call later
-      }, 500);
-    } else {
+      const searchResults = await searchTracks(text);
+      setResults(searchResults);
+      setLoading(false);
+    } else if (text.trim().length === 0) {
       setResults([]);
     }
-  };
+  }, []);
 
   const clearSearch = () => {
     setSearchQuery('');
     setResults([]);
   };
 
+  const handleTrackPress = (track: Track) => {
+    addToQueue(track);
+    setCurrentTrack(track);
+  };
+
   const renderCategoryCard = ({ item }: { item: any }) => (
     <TouchableOpacity 
       style={[styles.categoryCard, { backgroundColor: item.color }]}
       activeOpacity={0.8}
+      onPress={() => handleSearch(item.title)}
     >
       <Text style={styles.categoryTitle}>{item.title}</Text>
       <View style={styles.categoryIconContainer}>
@@ -102,7 +96,7 @@ export default function SearchScreen() {
         >
           <Text style={styles.sectionTitle}>Browse all</Text>
           <View style={styles.categoriesGrid}>
-            {CATEGORIES.map(item => (
+            {SEARCH_CATEGORIES.map(item => (
               <View key={item.id} style={styles.categoryWrapper}>
                 {renderCategoryCard({ item })}
               </View>
@@ -128,7 +122,7 @@ export default function SearchScreen() {
                     thumbnail={item.thumbnail}
                     isActive={isActive}
                     isPlaying={isActive && isPlaying}
-                    onPress={() => setCurrentTrack(item)}
+                    onPress={() => handleTrackPress(item)}
                   />
                 );
               }}

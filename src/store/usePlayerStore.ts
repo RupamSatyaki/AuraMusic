@@ -1,15 +1,5 @@
 import { create } from 'zustand';
-
-export interface Track {
-  id: string;
-  url: string;
-  title: string;
-  artist?: string;
-  thumbnail?: string;
-  duration?: number;
-  filename?: string;
-  uri?: string;
-}
+import { Track } from '../types/track';
 
 interface PlayerState {
   currentTrack: Track | null;

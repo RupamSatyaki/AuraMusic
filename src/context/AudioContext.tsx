@@ -46,22 +46,36 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const playTrack = async (source: any) => {
     try {
+      // Clean up previous sound completely
       if (soundRef.current) {
+        await soundRef.current.stopAsync();
         await soundRef.current.unloadAsync();
+        soundRef.current = null;
       }
 
-      const audioSource = typeof source === 'string' ? { uri: source } : source;
+      let audioSource;
+      if (typeof source === 'string') {
+        const cleanedUrl = source.trim();
+        if (!cleanedUrl) return;
+        audioSource = { uri: cleanedUrl };
+      } else {
+        audioSource = source;
+      }
+
+      console.log('Final audio source:', audioSource);
 
       const { sound } = await Audio.Sound.createAsync(
         audioSource,
-        { shouldPlay: true },
+        { shouldPlay: true, progressUpdateIntervalMillis: 500 },
         onPlaybackStatusUpdate
       );
       
       soundRef.current = sound;
       setIsPlaying(true);
+      console.log('Track loaded and playing');
     } catch (error) {
-      console.error('Error playing track:', error);
+      console.error('Playback Error:', error);
+      setIsPlaying(false);
     }
   };
 

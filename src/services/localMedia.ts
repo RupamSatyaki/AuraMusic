@@ -1,8 +1,9 @@
 import * as MediaLibrary from 'expo-media-library';
 import { Platform } from 'react-native';
+import { Track } from '../types/track';
 
 // Using local assets for web view since scanning is not possible
-const WEB_LOCAL_TRACKS = [
+const WEB_LOCAL_TRACKS: Track[] = [
   {
     id: 'demo-1',
     url: require('../../assets/music/Raga of Revenge (From DC) - Anirudh Ravichander (youtube).mp3'),
@@ -68,7 +69,7 @@ const WEB_LOCAL_TRACKS = [
   }
 ];
 
-export const scanLocalMusic = async () => {
+export const scanLocalMusic = async (): Promise<Track[]> => {
   if (Platform.OS === 'web') {
     return WEB_LOCAL_TRACKS;
   }
@@ -92,7 +93,7 @@ export const scanLocalMusic = async () => {
 
     const filteredTracks = assets.assets.filter(asset => asset.duration > 30); 
 
-    return filteredTracks.map((asset) => {
+    return filteredTracks.map((asset): Track => {
       return {
         id: asset.id,
         url: asset.uri,
@@ -109,7 +110,7 @@ export const scanLocalMusic = async () => {
   }
 };
 
-export const pickLocalFiles = async (): Promise<any[]> => {
+export const pickLocalFiles = async (): Promise<Track[]> => {
   if (Platform.OS !== 'web') return [];
 
   return new Promise((resolve) => {
@@ -122,7 +123,7 @@ export const pickLocalFiles = async (): Promise<any[]> => {
       const files = e.target.files;
       if (!files) return resolve([]);
 
-      const pickedTracks = Array.from(files).map((file: any, index) => {
+      const pickedTracks = Array.from(files).map((file: any, index): Track => {
         const url = URL.createObjectURL(file);
         return {
           id: `picked-${Date.now()}-${index}`,
