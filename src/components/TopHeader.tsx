@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { Colors } from '../theme/colors';
 
 const YoutubeIcon = ({ size = 24, color = "#FF0000" }) => (
@@ -23,6 +24,7 @@ const SettingsIcon = ({ size = 24, color = "#FFFFFF" }) => (
 
 const TopHeader = () => {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -32,12 +34,18 @@ const TopHeader = () => {
         </View>
 
         <View style={styles.rightSection}>
-          <TouchableOpacity style={styles.iconButton}>
+          <TouchableOpacity 
+            style={styles.iconButton}
+            onPress={() => router.push('/downloader')}
+          >
             <View style={styles.ytIconWrapper}>
               <YoutubeIcon size={20} />
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
+          <TouchableOpacity 
+            style={styles.iconButton}
+            onPress={() => router.push('/account')}
+          >
             <SettingsIcon size={22} />
           </TouchableOpacity>
         </View>
