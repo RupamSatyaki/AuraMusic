@@ -1,9 +1,7 @@
-import { Platform } from 'react-native';
 import { Track } from '../types/track';
 
-// Using a more stable and widely used JioSaavn API instance
-const SAAVN_BASE_URL = 'https://saavn.dev/api';
-const PROXY_URL = 'https://api.allorigins.win/get?url=';
+// Stable JioSaavn API Instance
+const SAAVN_BASE_URL = 'https://jiosaavn-api-tau.vercel.app/api';
 
 /**
  * Searches for full songs using the JioSaavn API
@@ -13,51 +11,20 @@ export const searchTracks = async (query: string, page: number = 1): Promise<Tra
     const cleanQuery = query.trim();
     if (!cleanQuery) return [];
 
-    // Saavn.dev uses /search/songs?query=...&page=...&limit=...
-    const targetUrl = `${SAAVN_BASE_URL}/search/songs?query=${encodeURIComponent(cleanQuery)}&page=${page}&limit=20`;
+    // Construct URL with explicit '?' separator
+    const finalUrl = `${SAAVN_BASE_URL}/search/songs?query=${encodeURIComponent(cleanQuery)}&page=${page}&limit=20`;
     
-    let finalUrl = targetUrl;
-    
-    // For Web, we use AllOrigins proxy to bypass CORS
-    if (Platform.OS === 'web') {
-      finalUrl = `${PROXY_URL}${encodeURIComponent(targetUrl)}`;
-    }
-
-    console.log('Fetching Search:', finalUrl);
+    console.log('[Saavn API] Fetching:', finalUrl);
     
     const response = await fetch(finalUrl);
-    const responseText = await response.text();
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     
-    if (!response.ok) {
-      console.error('API Error Response:', responseText.substring(0, 200));
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const json = await response.json();
     
-    let json;
-    try {
-      json = JSON.parse(responseText);
-    } catch (e) {
-      console.error('Failed to parse main response as JSON:', responseText.substring(0, 100));
-      return [];
-    }
-    
-    // If using AllOrigins, the actual data is inside json.contents
-    if (Platform.OS === 'web' && json.contents) {
-      try {
-        json = JSON.parse(json.contents);
-      } catch (e) {
-        console.error('Failed to parse AllOrigins contents as JSON:', json.contents.substring(0, 100));
-        return [];
-      }
-    }
-
-    // Extract results - different API versions use different structures
+    // Standard JioSaavn API structure
     const results = json?.data?.results || json?.results || [];
 
-    if (!Array.isArray(results)) {
-      console.error('Invalid search results format:', json);
-      return [];
-    }
+    if (!Array.isArray(results)) return [];
 
     return results
       .filter((item: any) => item.downloadUrl && item.downloadUrl.length > 0)
@@ -91,7 +58,23 @@ export const searchTracks = async (query: string, page: number = 1): Promise<Tra
         };
       });
   } catch (error) {
-    console.error('Search API Error:', error);
+    console.error('[Saavn API Error]:', error);
     return [];
+  }
+};
+
+/**
+ * Resolves a track name to a full JioSaavn audio link.
+ * Used for the Smart Linker approach.
+ */
+export const resolveSaavnTrack = async (query: string): Promise<string | null> => {
+  try {
+    const results = await searchTracks(query, 1);
+    if (results && results.length > 0) {
+      return results[0].url;
+    }
+    return null;
+  } catch (error) {
+    return null;
   }
 };

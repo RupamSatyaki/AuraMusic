@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Audio } from 'expo-av';
 import { usePlayerStore } from '../store/usePlayerStore';
-import { getYouTubeAudioStream } from '../api/youtubeApi';
+import { resolveSaavnTrack } from '../api/musicApi';
 
 interface AudioContextType {
   togglePlayback: () => Promise<void>;
@@ -64,14 +64,30 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (!cleanedUrl) return;
 
         // Special handling for YouTube
-        if (cleanedUrl.includes('YOUTUBE_ID:') || (cleanedUrl.includes('pipedapi') && currentTrack?.id.startsWith('yt-'))) {
-          const videoId = currentTrack.id.replace('yt-', '');
+        if (cleanedUrl.includes('YOUTUBE_ID:')) {
+          // This part still uses YT resolver if explicitly requested via YT search
+          const { getYouTubeAudioStream } = require('../api/youtubeApi');
+          const videoId = currentTrack?.id.replace('yt-', '') || '';
           const resolvedStream = await getYouTubeAudioStream(videoId);
           if (resolvedStream) {
             cleanedUrl = resolvedStream;
           } else {
             console.error('Failed to resolve YT stream');
             return;
+          }
+        }
+
+        // Special handling for iTunes Smart Linker (Now via JioSaavn)
+        if (cleanedUrl.startsWith('ITUNES_RESOLVE:')) {
+          const trackQuery = cleanedUrl.replace('ITUNES_RESOLVE:', '');
+          console.log(`[Smart Linker] Resolving "${trackQuery}" on JioSaavn...`);
+          const resolvedStream = await resolveSaavnTrack(trackQuery);
+          
+          if (resolvedStream) {
+            cleanedUrl = resolvedStream;
+          } else {
+            console.warn('[Smart Linker] Saavn resolution failed, falling back to 30s preview');
+            cleanedUrl = currentTrack?.uri || '';
           }
         }
 

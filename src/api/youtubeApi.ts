@@ -2,87 +2,116 @@ import { Platform } from 'react-native';
 import { Track } from '../types/track';
 
 /**
- * Modern Approach: Using a more stable search structure
- * Since youtubei.js can be complex to setup in a pure Expo environment without many polyfills,
- * we will use a hybrid approach: search via a stable metadata API and stream via a reliable resolver.
+ * Official YouTube Data API v3 integration for stable search.
+ * NOTE: Replace YOUR_YOUTUBE_API_KEY with your actual key from Google Cloud Console.
  */
+const YOUTUBE_API_KEY = 'AIzaSyBb7lIfZ8F_Brx4QNo5mmqze4GALnVKpiE';
+const YOUTUBE_SEARCH_URL = 'https://www.googleapis.com/youtube/v3/search';
 
-const STABLE_SEARCH_API = 'https://api.song.link/v1-alpha.1/search'; // Odesli API for metadata
-const YT_SEARCH_FALLBACK = 'https://pipedapi.kavin.rocks/search?q=';
+/**
+ * Robust stream resolution using Piped (still needed for audio stream URLs)
+ */
+const PIPED_INSTANCES = [
+  'https://api.piped.victr.me',
+  'https://pipedapi.kavin.rocks',
+  'https://piped-api.garudalinux.org',
+  'https://api.piped.projectsegfau.lt'
+];
 
+let currentInstanceIndex = 0;
+
+/**
+ * Searches YouTube using the Official API (Metadata only)
+ */
 export const searchYouTubeTracks = async (query: string): Promise<Track[]> => {
   try {
     const cleanQuery = query.trim();
     if (!cleanQuery) return [];
 
-    console.log(`[YT Search] Querying: ${cleanQuery}`);
+    if (YOUTUBE_API_KEY === 'YOUR_YOUTUBE_API_KEY') {
+      console.warn('YouTube API Key missing! Please add your key in youtubeApi.ts');
+    }
 
-    // We'll use a fast and open search that specifically targets Music
-    // Piped is actually quite good if we use the right filter and fallback
-    const response = await fetch(`${YT_SEARCH_FALLBACK}${encodeURIComponent(cleanQuery)}&filter=music_videos`);
+    const url = `${YOUTUBE_SEARCH_URL}?part=snippet&q=${encodeURIComponent(cleanQuery)}&type=video&videoCategoryId=10&maxResults=20&key=${YOUTUBE_API_KEY}`;
     
-    if (!response.ok) throw new Error('Search API failed');
+    console.log('[YT Official API] Searching...');
+    const response = await fetch(url);
     
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error?.message || 'API Error');
+    }
+
     const data = await response.json();
     const results = data.items || [];
 
     return results.map((item: any): Track => {
-      // Extract video ID safely
-      let videoId = '';
-      if (item.url) {
-        const match = item.url.match(/[?&]v=([^&]+)/);
-        videoId = match ? match[1] : (item.id || '');
-      } else {
-        videoId = item.id || '';
-      }
-
+      const videoId = item.id.videoId;
       return {
         id: `yt-${videoId}`,
         url: `YOUTUBE_ID:${videoId}`,
-        title: item.title || 'Unknown Title',
-        artist: item.uploaderName || 'YouTube Artist',
-        thumbnail: item.thumbnail || (item.thumbnails && item.thumbnails[0]?.url) || '',
-        duration: item.duration || 0,
+        title: item.snippet.title,
+        artist: item.snippet.channelTitle,
+        thumbnail: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default?.url,
+        duration: 0, // YouTube search API doesn't provide duration by default
         uri: `YOUTUBE_ID:${videoId}`,
       };
     });
   } catch (error) {
-    console.error('[YT Search Error]:', error);
+    console.error('[YT Official Search Error]:', error);
     return [];
   }
 };
 
 /**
- * Resolves a YouTube ID to a playable audio stream.
- * We use a dedicated resolver that is much more stable than raw scraping.
+ * Resolves a YouTube ID to a playable audio stream using fallback resolvers
  */
 export const getYouTubeAudioStream = async (videoId: string): Promise<string | null> => {
-  try {
-    console.log(`[YT Stream] Resolving: ${videoId}`);
-    
-    // List of reliable stream resolvers
-    const resolvers = [
-      `https://pipedapi.kavin.rocks/streams/${videoId}`,
-      `https://api.piped.victr.me/streams/${videoId}`,
-      `https://piped-api.garudalinux.org/streams/${videoId}`
-    ];
+  let attempts = 0;
+  
+  while (attempts < PIPED_INSTANCES.length) {
+    const instance = PIPED_INSTANCES[currentInstanceIndex];
+    const targetUrl = `${instance}/streams/${videoId}`;
+    let finalUrl = targetUrl;
 
-    for (const url of resolvers) {
-      try {
-        const res = await fetch(url);
-        if (res.ok) {
-          const data = await res.json();
-          const audioStream = data.audioStreams?.find((s: any) => s.format === 'M4A' || s.codec === 'opus') || data.audioStreams?.[0];
-          if (audioStream?.url) return audioStream.url;
-        }
-      } catch (e) {
-        continue;
-      }
+    if (Platform.OS === 'web') {
+      finalUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
     }
 
+    try {
+      console.log(`[YT Resolver] Trying ${instance}...`);
+      const response = await fetch(finalUrl);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      let data = await response.json();
+      if (Platform.OS === 'web' && data.contents) {
+        data = JSON.parse(data.contents);
+      }
+
+      const audioStream = data.audioStreams?.find((s: any) => s.format === 'M4A' || s.codec === 'opus') || data.audioStreams?.[0];
+      if (audioStream?.url) return audioStream.url;
+      
+      throw new Error('No audio stream');
+    } catch (error) {
+      currentInstanceIndex = (currentInstanceIndex + 1) % PIPED_INSTANCES.length;
+      attempts++;
+    }
+  }
+  return null;
+};
+
+/**
+ * Smart Linker resolution
+ */
+export const findYouTubeFullTrack = async (query: string): Promise<string | null> => {
+  try {
+    const tracks = await searchYouTubeTracks(`${query} audio`);
+    if (tracks.length > 0) {
+      const videoId = tracks[0].id.replace('yt-', '');
+      return await getYouTubeAudioStream(videoId);
+    }
     return null;
-  } catch (error) {
-    console.error('[YT Stream Resolution Error]:', error);
+  } catch (e) {
     return null;
   }
 };

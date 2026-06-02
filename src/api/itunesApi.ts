@@ -22,12 +22,12 @@ export const searchItunesTracks = async (query: string): Promise<Track[]> => {
       
       return {
         id: `itunes-${item.trackId}`,
-        url: item.previewUrl, // 30-second high quality preview
+        url: `ITUNES_RESOLVE:${item.artistName} - ${item.trackName}`, // Special marker for Smart Linker
         title: item.trackName,
         artist: item.artistName,
         thumbnail: highResArt,
         duration: Math.floor(item.trackTimeMillis / 1000) || 0,
-        uri: item.previewUrl,
+        uri: item.previewUrl, // Keep preview URL as fallback in uri field
       };
     });
   } catch (error) {
