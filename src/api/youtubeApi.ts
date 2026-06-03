@@ -5,7 +5,7 @@ import { Track } from '../types/track';
  * Official YouTube Data API v3 integration for stable search.
  * NOTE: Replace YOUR_YOUTUBE_API_KEY with your actual key from Google Cloud Console.
  */
-const YOUTUBE_API_KEY = 'AIzaSyBb7lIfZ8F_Brx4QNo5mmqze4GALnVKpiE';
+const YOUTUBE_API_KEY = '';
 const YOUTUBE_SEARCH_URL = 'https://www.googleapis.com/youtube/v3/search';
 
 /**
